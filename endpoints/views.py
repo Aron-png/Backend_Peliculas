@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from . models import Categoria
 import json
 
 #/endpoint/login
@@ -101,3 +102,31 @@ def obtenerPeliculas(request):
         }
         strError = json.dumps(dictError)
         return HttpResponse(strError)
+#No vamos a recibir nada de request porque queremos todas las categorias
+#El servicion na va a devolver un String en forma de dicc de  (id y nombre)
+def obtenerCategorias(request):
+    if request.method=="GET":
+        #Lista en formato QuerySet
+        #Filtrar categorias cuyo estado sea A de Activo
+        ListaCategoriasQuerySet = Categoria.objects.filter(estado="A")
+    #ListaCategorias = list(ListaCategoriasQuerySet)#convertido a lista de python (NO FUNCIONA)
+        #En su reemplazo hacemos esto:
+        ListaCategorias = []
+        for c in ListaCategoriasQuerySet:
+            ListaCategorias.append({
+                "id":c.id,
+                "nombre":c.nombre
+            })#convertido a lista de python
+        dictOK = {
+            "error" : "",
+            "categoria" : ListaCategorias
+        }
+        #Para retornarlo en el frondend, tengo que convertirlo a un String JSON y no dicc
+        return HttpResponse(json.dumps(dictOK))
+    else:
+        dictError = {
+            "error": "Tipo de peticion no existe"
+        }
+        strError = json.dumps(dictError)
+        return HttpResponse(strError)
+    
