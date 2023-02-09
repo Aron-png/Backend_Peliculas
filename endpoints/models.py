@@ -1,3 +1,6 @@
 from django.db import models
 
-# Create your models here.
+class Pelicula(models.Model):
+    #CharField para poner longitud del String y URLField hace lo mismo
+    nombre = models.CharField(max_length=100)
+    url = models.URLField()

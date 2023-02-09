@@ -25,7 +25,10 @@ SECRET_KEY = 'django-insecure-n*bs0d*a=)pnp+n*8n1mfl@1s=r3!+ngsrg*g2md!547hnc*y=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost",#Agregar
+    "127.0.0.1"#Agregar
+]
 
 
 # Application definition
@@ -36,18 +39,23 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'corsheaders',#Agregar
     'django.contrib.staticfiles',
+    'endpoints.apps.EndpointsConfig'#Agregar
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',#Agregar
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True #TODO: Modificar
 
 ROOT_URLCONF = 'peliculas.urls'
 

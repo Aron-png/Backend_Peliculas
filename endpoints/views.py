@@ -1,6 +1,11 @@
 from django.http import HttpResponse
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 import json
+
+#/endpoint/login
+@csrf_exempt
+
 def login(request):
     if request.method == "POST":
         #La data q obtenemos de un servidor en forma de String "request.body".
@@ -31,10 +36,17 @@ def login(request):
         }
         strError = json.dumps(dictError)
         return HttpResponse(strError)
+        
+@csrf_exempt
 def obtenerPeliculas(request):
     if request.method == "GET":
-        categoria = request.GET.get("categoria")#Recogemos la info de la url del query
-        
+        categoria = request.GET.get("categoria")#Recogemos la info de la url del query, valor String
+        if categoria == None:
+            dictError = {
+                "error": "Debe enviar una categoria como query paremeter."
+            }
+            strError = json.dumps(dictError)
+            return HttpResponse(strError)
         peliculas = [
             {
                 "id": 1,
@@ -54,13 +66,28 @@ def obtenerPeliculas(request):
             }
         ]
         #Logica que filtra peliculas
-        def logicaFiltrado(pelicula):
+        """def logicaFiltrado(pelicula):
             if categoria == pelicula["categoria"]:
                 return True
             else:
                 return False
+        Interpolacion de String con Python-
+        Para concatener variable con cadenas de String, envez de usar +
+        f"asdffads{variable}"
+                """
         #Peliculas filtradas lo pasamos en el response
-        peliculasFiltradas = filter(logicaFiltrado,peliculas)
+              
+              #En vez de estar concatenado String con +, se pone f' <info>'
+        peliculasFiltradas = []
+        #Convertir el tipo String a un int para q se conpare con el otro int=p["categoria"]
+        if categoria == "-1":
+            #no se va a filtrar
+            peliculasFiltradas = peliculas
+        else:
+            for p in peliculas:
+               if p["categoria"] == int(categoria):
+                  peliculasFiltradas.append(p)
+              
         # TODO: Consultas a bd
         dictResponse = {
             "error": "",
