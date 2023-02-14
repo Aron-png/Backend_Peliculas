@@ -1,15 +1,14 @@
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
-from . models import Categoria
+from . models import Categoria, Pelicula
 import json
 
 #/endpoint/login
 @csrf_exempt
-
 def login(request):
     if request.method == "POST":
-        #La data q obtenemos de un servidor en forma de String "request.body".
+        #La data q obtenemos de registrarse en forma de String "request.body".
         dictDataRequest = json.loads(request.body)#convertir a diccionario
         usuario = dictDataRequest["usuario"]
         password = dictDataRequest["password"]
@@ -38,58 +37,43 @@ def login(request):
         strError = json.dumps(dictError)
         return HttpResponse(strError)
         
-@csrf_exempt
+@csrf_exempt#Te permite hacer una comunicacion de servidor al cliente, sin errores (403)
 def obtenerPeliculas(request):
     if request.method == "GET":
-        categoria = request.GET.get("categoria")#Recogemos la info de la url del query, valor String
-        if categoria == None:
+        idcategoria = request.GET.get("categoria")#Recogemos la info de la url del query, valor String
+        if idcategoria == None:
             dictError = {
                 "error": "Debe enviar una categoria como query paremeter."
             }
             strError = json.dumps(dictError)
-            return HttpResponse(strError)
-        peliculas = [
-            {
-                "id": 1,
-                "nombre": "Avatar 2",
-                "url": "https://i.blogs.es/6b43d1/avatar-edicion-especial-cartel/450_1000.jpg",
-                "categoria": 1
-            }, {
-                "id": 2,
-                "nombre": "El gato con botas",
-                "url": "https://www.universalpictures-latam.com/tl_files/content/movies/puss_in_boots_2/posters/01.jpg",
-                "categoria": 2
-            }, {
-                "id": 3,
-                "nombre": "Transformer, el despertar de las bestias",
-                "url": "https://es.web.img3.acsta.net/pictures/22/12/02/09/33/5399733.jpg",
-                "categoria": 3
-            }
-        ]
-        #Logica que filtra peliculas
-        """def logicaFiltrado(pelicula):
-            if categoria == pelicula["categoria"]:
-                return True
-            else:
-                return False
-        Interpolacion de String con Python-
-        Para concatener variable con cadenas de String, envez de usar +
-        f"asdffads{variable}"
-                """
-        #Peliculas filtradas lo pasamos en el response
-              
-              #En vez de estar concatenado String con +, se pone f' <info>'
+            return HttpResponse(strError)        
+        # TODO: Consultas a base de datos -> HECHO
+        #categoria__id=idCategoria
+        #Un String con una categoria como comparacon no esta bien
+        #Si al objeto quiero filtrar por su id
+        #categoria__"valor"
         peliculasFiltradas = []
-        #Convertir el tipo String a un int para q se conpare con el otro int=p["categoria"]
-        if categoria == "-1":
-            #no se va a filtrar
-            peliculasFiltradas = peliculas
+
+        if idcategoria == "-1":
+            PeliculaQS = Pelicula.objects.all()
         else:
-            for p in peliculas:
-               if p["categoria"] == int(categoria):
-                  peliculasFiltradas.append(p)
-              
-        # TODO: Consultas a bd
+            PeliculaQS = Pelicula.objects.filter(categoria__id=idcategoria)
+        
+        for p in PeliculaQS:
+            peliculasFiltradas.append(
+              {
+                "id":p.pk,
+                "nombre":p.nombre,
+                "url":p.url,
+                "categoria":{
+                "id":p.categoria.pk,
+                "nombre":p.categoria.nombre
+                }
+              }
+            )
+            
+
+
         dictResponse = {
             "error": "",
             "peliculas": list(peliculasFiltradas)
@@ -103,11 +87,12 @@ def obtenerPeliculas(request):
         strError = json.dumps(dictError)
         return HttpResponse(strError)
 #No vamos a recibir nada de request porque queremos todas las categorias
-#El servicion na va a devolver un String en forma de dicc de  (id y nombre)
+#El servicio nos va a devolver un String en forma de dicc de  (id y nombre)
 def obtenerCategorias(request):
     if request.method=="GET":
         #Lista en formato QuerySet
         #Filtrar categorias cuyo estado sea A de Activo
+                                                   #Comparacion: stado="A"
         ListaCategoriasQuerySet = Categoria.objects.filter(estado="A")
     #ListaCategorias = list(ListaCategoriasQuerySet)#convertido a lista de python (NO FUNCIONA)
         #En su reemplazo hacemos esto:
@@ -129,4 +114,122 @@ def obtenerCategorias(request):
         }
         strError = json.dumps(dictError)
         return HttpResponse(strError)
+"""
+Path, POST:
+/endpoints/categoria/crear
+Request:
+{
+    "nombre":"...",
+    "estado":"A"
+}
+"""
+
+@csrf_exempt#Te permite hacer una comunicacion de servidor al cliente, sin errores (403)
+def registrarCategoria(request):
+
+    if request.method != "POST":
+        dictError = {
+            "error": "Tipo de peticion no valida"
+        }
+        strError = json.dumps(dictError)
+        return HttpResponse(strError)
+    #El Request esta siendo llamado.
+    dictCategoria = json.loads(request.body)
+    nombre = dictCategoria["nombre"]
+    estado = dictCategoria["estado"]
+        """
+        En models, categoria tiene...
+        nombre = models.CharField(max_length=50)
+        estado = models.CharField(max_length=1, choices=CATEGORIA_ESTADOS)#1 xq solo hay 1 caracter
+        """
+        #              Se declara el objet cat
+        #Lo esta haciendo directamente porque son String
+        #El valor se le esta asignando el argumento de entrada "nombre=nombre"
+    cat = Categoria(nombre=nombre, estado=estado)
+        #Codigo donde se registra la nueva categoria
+    cat.save()
+    dictOK = {
+        "error" : ""
+    }
+        #Queremos hacer lo contrario
+    return HttpResponse(json.dumps(dictOK))
+    
+"""
+Path, POST:
+/endpoints/categorias/modificar
+Request:
+{
+    "id": 1,
+    "nombre"?: "...",
+    "estado"? : "A"
+}
+Response:
+{
+    "error": ""
+}
+"""
+
+def modificarCategoria(request):
+    if request.method != "POST":
+        dictError = {
+            "error": "Tipo de peticion no valida"
+        }
+        strError = json.dumps(dictError)
+        return HttpResponse(strError)
+    dicctCategoria = json.loads(request.body)
+
+    identificador = dicctCategoria["id"]
+    #cat = Categoria.objects.all() --> Ya no se usa esto, porque el filter devuelve una querySet
+    #luego el querySet lo convierto en lista. Sino un objeto Categoria.
+
+    #                Para eso utilizamos esta funcion get de DJANGO
+    cat = Categoria.objects.get(pk=identificador) #Obtener cat de base de datos
+    #Si hago una consulta de un elemento de categoria que no existe, "python" se cae
+    #En otras palabras, si usamos esto "dicctCategoria["nombre"]" -> Sale Error
+
+    #                Para eso utilizamos esta funcion get de PYTHON
+    if dicctCategoria.get("nombre") != None:
+        cat.nombre = dictCategoria.get("nombre")
+
+    if dicctCategoria.get("estado") != None:
+        cat.nombre = dictCategoria.get("estado")
+        #Codigo donde se registra la nueva categoria
+    cat.save()
+    dictOK = {
+        "error" : ""
+    }
+        #Queremos hacer lo contrario
+    return HttpResponse(json.dumps(dictOK))
+"""
+/endpoints/categorias/eliminar
+"""
+def eliminarCategoria(request):
+    if request.method != "POST":
+        dictError = {
+            "error": "Tipo de peticion no valida"
+        }
+        strError = json.dumps(dictError)
+        return HttpResponse(strError)
+
+    idCategoria = request.GET.get("id")
+
+    if idCAtegoria == None:
+        dictError = {
+            "error": "Debe de enviar una categoria para eliminarlo"
+        }
+        strError = json.dumps(dictError)
+        return HttpResponse(strError)
+    cat = Categoria.objects.get(pk=idCategoria)#Obtener la id de la Categoria
+    cat.delete()#Elimino la categoria de la base de datos
+    dictOK = {
+        "error" : ""
+    }
+        #Queremos hacer lo contrario
+    return HttpResponse(json.dumps(dictOK))
+    
+
+
+
+
+
     
