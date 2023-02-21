@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
-from . models import Categoria, Pelicula
+from . models import Categoria, Pelicula, PeliculaXActor, Actor
 import json
 
 #/endpoint/login
@@ -86,6 +86,34 @@ def obtenerPeliculas(request):
         }
         strError = json.dumps(dictError)
         return HttpResponse(strError)
+
+
+# /endpoinst/peliculas/listar_nombre?nombre=werwer
+def obtenerPeliculasPorNombre(request):
+    if request.method != "GET":
+        dictError = {
+            "error": "Tipo de peticion no existe"
+        }
+        strError = json.dumps(dictError)
+        return HttpResponse(strError)
+
+    nombreAFiltrar = request.GET.get("nombre")
+
+    peliculasQS = Pelicula.objects.filter(nombre__contains=nombreAFiltrar)
+
+    peliculas = []
+    for p in peliculasQS:
+        peliculas.append({
+            "id" : p.id,
+            "nombre" : p.nombre
+        })
+
+    dictOK = {
+        "error" : "",
+        "peliculas" : peliculas
+    }
+    return HttpResponse(json.dumps(dictOK))
+
 #No vamos a recibir nada de request porque queremos todas las categorias
 #El servicio nos va a devolver un String en forma de dicc de  (id y nombre)
 def obtenerCategorias(request):
@@ -124,27 +152,28 @@ Request:
 }
 """
 
-@csrf_exempt#Te permite hacer una comunicacion de servidor al cliente, sin errores (403)
+@csrf_exempt
+#Te permite hacer una comunicacion de servidor al cliente, sin errores (403)
 def registrarCategoria(request):
-
     if request.method != "POST":
         dictError = {
             "error": "Tipo de peticion no valida"
         }
         strError = json.dumps(dictError)
         return HttpResponse(strError)
-    #El Request esta siendo llamado.
+    #El Request esta siendo llamado. Con "json.loads" convertirmos en la cadena de texto en
+    #un diccionario para poder asi acceder a sus valores dictCategoria["nombre"].
     dictCategoria = json.loads(request.body)
     nombre = dictCategoria["nombre"]
     estado = dictCategoria["estado"]
-        """
-        En models, categoria tiene...
-        nombre = models.CharField(max_length=50)
-        estado = models.CharField(max_length=1, choices=CATEGORIA_ESTADOS)#1 xq solo hay 1 caracter
-        """
-        #              Se declara el objet cat
-        #Lo esta haciendo directamente porque son String
-        #El valor se le esta asignando el argumento de entrada "nombre=nombre"
+    
+    #En models, categoria tiene...
+    #nombre = models.CharField(max_length=50)
+    #estado = models.CharField(max_length=1, choices=CATEGORIA_ESTADOS)#1 xq solo hay 1 caracter
+    #          Se declara el objet cat
+    #Lo esta haciendo directamente porque son String
+    #El valor se le esta asignando el argumento de entrada "nombre=nombre"
+    
     cat = Categoria(nombre=nombre, estado=estado)
         #Codigo donde se registra la nueva categoria
     cat.save()
@@ -180,19 +209,21 @@ def modificarCategoria(request):
 
     identificador = dicctCategoria["id"]
     #cat = Categoria.objects.all() --> Ya no se usa esto, porque el filter devuelve una querySet
-    #luego el querySet lo convierto en lista. Sino un objeto Categoria.
+    #luego el querySet lo convierto en lista.No quiero lista Sino un objeto Categoria.
 
     #                Para eso utilizamos esta funcion get de DJANGO
-    cat = Categoria.objects.get(pk=identificador) #Obtener cat de base de datos
+    #Obtener (objeto Categoria = cat) de base de datos --> .objects.get(pk=identificador) 
+    cat = Categoria.objects.get(pk=identificador) 
+
+
     #Si hago una consulta de un elemento de categoria que no existe, "python" se cae
     #En otras palabras, si usamos esto "dicctCategoria["nombre"]" -> Sale Error
-
     #                Para eso utilizamos esta funcion get de PYTHON
     if dicctCategoria.get("nombre") != None:
         cat.nombre = dictCategoria.get("nombre")
 
     if dicctCategoria.get("estado") != None:
-        cat.nombre = dictCategoria.get("estado")
+        cat.estado = dictCategoria.get("estado")
         #Codigo donde se registra la nueva categoria
     cat.save()
     dictOK = {
@@ -227,7 +258,40 @@ def eliminarCategoria(request):
         #Queremos hacer lo contrario
     return HttpResponse(json.dumps(dictOK))
     
+# /endpoints/actores/listar?pelicula=2
+def obtenerActores(request):
+    if request.method != "GET":
+        dictError = {
+            "error": "Tipo de peticion no existe"
+        }
+        strError = json.dumps(dictError)
+        return HttpResponse(strError)
 
+    peliculaId = request.GET.get("pelicula")
+
+    actores = []
+    if peliculaId == None:
+        # Devolver todas los actores
+        actoresQS = Actor.objects.all()
+        for a in actoresQS:
+            actores.append({
+                "id" : a.pk,
+                "nombre" : a.nombre
+            })
+    else :
+        # Filtrar por id de pelicula
+        peliculasxActorQS = PeliculaXActor.objects.filter(pelicula__pk=peliculaId)
+        for pa in peliculasxActorQS:
+            actores.append({
+                "id" : pa.actor.pk,
+                "nombre" : pa.actor.nombre
+            })
+
+    dictOK = {
+        "error" : "",
+        "actores" : actores
+    }
+    return HttpResponse(json.dumps(dictOK))
 
 
 
