@@ -27,7 +27,12 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "localhost",#Agregar
-    "127.0.0.1"#Agregar
+    "127.0.0.1",#Agregar
+    "peliculas20201166.azurewebsites.net"#Agregar2
+]
+
+CSRF_TRUSTED_ORIGINS = [#Agregar2
+    'https://peliculas20201166.azurewebsites.net/'#Agregar2
 ]
 
 
@@ -45,7 +50,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'whitenoise.runserver_nostatic',#Agregar2
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',#Agregar2
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',#Agregar
     'django.middleware.common.CommonMiddleware',
@@ -84,11 +91,11 @@ WSGI_APPLICATION = 'peliculas.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'peliculasbd',
-        'USER' : 'peliculas',
-        'PASSWORD' : 'peliculas',
-        'HOST' : '127.0.0.1',
-        'PORT' : '5432'
+        'NAME': 'peliculas7291',#Modificado
+        'USER' : 'user_peliculas',#Modificado
+        'PASSWORD' : 'pass123$$',#Modificado
+        'HOST' : 'peliculas7291.postgres.database.azure.com',#Modificado
+        'PORT' : '5434'#Nunca lo llegue a implementar
     }
 }
 
@@ -129,6 +136,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATIC_ROOT = './static/'
+
+STATICFILES_STORAGE = ('whitenoise.storage.CompressedManifestStaticFilesStorage')
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 

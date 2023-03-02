@@ -213,13 +213,14 @@ def modificarCategoria(request):
 
     #                Para eso utilizamos esta funcion get de DJANGO
     #Obtener (objeto Categoria = cat) de base de datos --> .objects.get(pk=identificador) 
+    #.objects.get("nombre de la variable en el model Categoria"=identificador)
     cat = Categoria.objects.get(pk=identificador) 
 
 
     #Si hago una consulta de un elemento de categoria que no existe, "python" se cae
     #En otras palabras, si usamos esto "dicctCategoria["nombre"]" -> Sale Error
     #                Para eso utilizamos esta funcion get de PYTHON
-    if dicctCategoria.get("nombre") != None:
+    if dicctCategoria.get("nombre") != None:#Aqui pregunto si dentro del dicc hay o no un elemento
         cat.nombre = dictCategoria.get("nombre")
 
     if dicctCategoria.get("estado") != None:
